@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Container, ListGroup, Form } from "react-bootstrap";
 import { ResetButton } from "./uiComponent";
 import axios from "axios";
@@ -13,12 +13,20 @@ type Props = {
   todoItems: TodoItem[];
 };
 
-const TodoList: React.FC<Props> = ({ todoItems }) => {
+const TodoList: React.FC<Props> = ({ todoItems }) => {  
+  const [state, setState] = React.useState<{ selections: number[] }>({ selections: [] });
+
   useEffect(() => {
     const token = document.querySelector(
       "[name=csrf-token]"
     ) as HTMLMetaElement;
     axios.defaults.headers.common["X-CSRF-TOKEN"] = token.content;
+    
+    let sel = state.selections;
+    todoItems.map((item) => {
+      if (item.checked) sel.push(item.id);
+    });
+    setState({ selections: sel});
   }, []);
 
   const checkBoxOnCheck = (
@@ -29,6 +37,16 @@ const TodoList: React.FC<Props> = ({ todoItems }) => {
       id: todoItemId,
       checked: e.target.checked,
     });
+
+    let sel = state.selections;
+    let find = sel.indexOf(todoItemId);
+    if (find > -1) {
+      sel.splice(find, 1);
+    } else {
+      sel.push(todoItemId);
+    }
+
+    setState({ selections: sel});
   };
 
   const resetButtonOnClick = (): void => {
@@ -44,7 +62,7 @@ const TodoList: React.FC<Props> = ({ todoItems }) => {
             <Form.Check
               type="checkbox"
               label={todo.title}
-              checked={todo.checked}
+              checked={state.selections.includes(todo.id)}
               onChange={(e) => checkBoxOnCheck(e, todo.id)}
             />
           </ListGroup.Item>
